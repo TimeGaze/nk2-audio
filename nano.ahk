@@ -262,7 +262,8 @@ midi_binding(control, value)
             return
         app := applications[control]
         ;Tooltip, %control% = %app%
-        SetTimer, RemoveToolTip, 1000
+        ;SetTimer, RemoveToolTip, 100
+		;MsgBox, app:  %app%
         Volume := GetVolumeObject(app)
         VA_ISimpleAudioVolume_SetMasterVolume(Volume, value/127)
     }
@@ -300,10 +301,30 @@ midi_binding(control, value)
         if (applications[appnum] == "")
             return
         app := applications[appnum]
-        Tooltip, %appnum% = %app%
-        SetTimer, RemoveToolTip, 1000
-        WinActivate, ahk_exe %app%
-    }
+        ;Tooltip, %appnum% = %app%
+		;SetTimer, RemoveToolTip, 1000
+        ;WinActivate, ahk_exe %app%
+		
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Edited by Alan Hartquist;;;;;;;
+		
+		if (app == "mumble.exe")
+		{
+		Tooltip, %appnum% = %app%`nCABLE-A Input (VB-Audio Cable A)
+		SetTimer, RemoveToolTip, 1000
+		} else if (app == "Spotify.exe" || app == "chrome.exe" || app == "vlc.exe")
+		{	
+		Tooltip, %appnum% = %app%`nCABLE-B Input (VB-Audio Cable B)
+		SetTimer, RemoveToolTip, 1000
+		}
+		else 
+		{
+		Tooltip, %appnum% = %app%`nHeadset Earphone (HyperX 7.1 Audio)
+		SetTimer, RemoveToolTip, 1000
+		}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;	
+		
+}
 
     ; REVEAL MIXER
     else if (control == 71 && value = 127) {
@@ -336,7 +357,6 @@ return
 ^Esc::Reload
 ;Esc::GoSub, sub_exit
 
-
 #include VA.ahk
 
 ; Get "System Sounds" (PID 0)
@@ -356,6 +376,7 @@ return
 
 GetVolumeObject(Param)
 {
+	program := Param
     static IID_IASM2 := "{77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F}"
     , IID_IASC2 := "{bfb7ff88-7239-4fc9-8fa2-07c950be9c6d}"
     , IID_ISAV := "{87CE5498-68D6-44E5-9215-6DA47EF883D8}"
@@ -371,11 +392,32 @@ GetVolumeObject(Param)
         Param := ErrorLevel
     }
 
-    ; GetDefaultAudioEndpoint
-    DAE := VA_GetDevice()
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Edited by Alan Hartquist;;;;;;;
+					
+if (program == "mumble.exe")
+{
+device := 1 	; CABLE-A Input (VB-Audio Cable A)
+} else if (program == "Spotify.exe" || program == "chrome.exe" || program == "vlc.exe")
+{
+device := 4		; CABLE-B Input (VB-Audio Cable B)
+}
+else 
+{
+device := 2		; Headset Earphone (HyperX 7.1 Audio)
+}
+device_pointer := VA_GetDevice(device)
+device_name:=VA_GetDeviceName(device_pointer)
+;Tooltip, device = %device%`nprogram = %program%`ndevice_name = %device_name%
+;SetTimer, RemoveToolTip, 100
+VA_IMMDevice_Activate(device_pointer, IID_IASM2, 0, 0, IASM2)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+    ; GetDefaultAudioEndpoint
+    ;DAE := VA_GetDevice()
+	
     ; activate the session manager
-    VA_IMMDevice_Activate(DAE, IID_IASM2, 0, 0, IASM2)
+    ;VA_IMMDevice_Activate(DAE, IID_IASM2, 0, 0, IASM2)
 
     ; enumerate sessions for on this device
     VA_IAudioSessionManager2_GetSessionEnumerator(IASM2, IASE)
@@ -407,7 +449,8 @@ GetVolumeObject(Param)
     }
     ObjRelease(IASE)
     ObjRelease(IASM2)
-    ObjRelease(DAE)
+	;ObjRelease(DAE)  ;; HACKED ALSO 
+    ObjRelease(device_pointer)
     return ISAV
 }
 
